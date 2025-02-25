@@ -5,7 +5,7 @@ import Login from './pages/login';
 import Setup from './pages/SetupWizard';
 import Dashboard from './pages/dashboard';
 import FoodLog from './pages/foodLog';
-import ExerciseLog from './exercises/exerciselog';
+import ExerciseLog from './exercises/ExerciseLog';
 import './App.css';
 
 function App() {
