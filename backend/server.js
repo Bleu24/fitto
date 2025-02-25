@@ -350,7 +350,7 @@ app.delete('/api/user/food-log/:meal/:foodId', verifyToken, async (req, res) => 
 });
 
 // ✅ Get all exercises for a specific user
-app.get('/api/exercise-log/user/:userId', async (req, res) => {
+app.get('/api/exercise-log/user/:userId', verifyToken, async (req, res) => {
   try {
     const exercises = await Exercise.find({ userId: req.params.userId });
     res.status(200).json(exercises);
@@ -360,7 +360,7 @@ app.get('/api/exercise-log/user/:userId', async (req, res) => {
 });
 
 // ✅ Add a new exercise
-app.post('/api/exercise-log', async (req, res) => {
+app.post('/api/exercise-log', verifyToken, async (req, res) => {
   const { userId, exerciseName, duration, caloriesBurned, date } = req.body;
 
   try {
@@ -380,7 +380,7 @@ app.post('/api/exercise-log', async (req, res) => {
 });
 
 // ✅ Delete an exercise by ID
-app.delete('/api/exercise-log/:id', async (req, res) => {
+app.delete('/api/exercise-log/:id', verifyToken, async (req, res) => {
   try {
     await Exercise.findByIdAndDelete(req.params.id);
     res.status(200).json({ message: 'Exercise deleted' });
@@ -390,7 +390,7 @@ app.delete('/api/exercise-log/:id', async (req, res) => {
 });
 
 // ✅ (Optional) Update an exercise
-app.put('/api/exercise-log/:id', async (req, res) => {
+app.put('/api/exercise-log/:id',verifyToken, async (req, res) => {
   const { exerciseName, duration, caloriesBurned } = req.body;
 
   try {
