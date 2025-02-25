@@ -7,19 +7,20 @@ const MET_VALUES = {
   running: 9.8,
   cycling: 7.5,
   walking: 3.8,
-  basketball: 8.0, // ✅ Basketball included
+  basketball: 8.0,
   "stair machine": 8.8,
   weightlifting: 5.0,
   swimming: 6.0,
-  yoga: 3.0
+  yoga: 3.0,
+  cooking: 1.2
 };
 
 const ExerciseSearch = ({ onAddExercise }) => {
   const [input, setInput] = useState('');
+  const [duration, setDuration] = useState(''); // Default duration
   const [searchResult, setSearchResult] = useState(null);
   const [userWeight, setUserWeight] = useState(70); // Default weight
 
-  // ✅ Fetch User Profile for Accurate Weight
   useEffect(() => {
     const fetchUserProfile = async () => {
       const token = localStorage.getItem('token');
@@ -29,7 +30,7 @@ const ExerciseSearch = ({ onAddExercise }) => {
         });
         if (response.ok) {
           const data = await response.json();
-          setUserWeight(data.weight || 70); // Default to 70kg if user weight is unavailable
+          setUserWeight(data.weight || 70);
         }
       } catch (error) {
         console.error('Error fetching user profile:', error);
@@ -40,59 +41,74 @@ const ExerciseSearch = ({ onAddExercise }) => {
 
   const handleSearch = async () => {
     const doc = nlp(input);
-    const verb = doc.verbs().toGerund().out('text').toLowerCase();
-    const rawInput = input.toLowerCase().trim(); // Lowercase and trim for matching
-
+    let verb = doc.verbs().toGerund().out('text');
+    verb = verb.replace(/\b(is|are|was|were|am|be|been|being)\b\s*/g, '').trim();
+    const rawInput = input.toLowerCase().trim();
+  
+    // ✅ Manually add '-ing' if NLP fails to apply it correctly
+    if (!verb.endsWith('ing')) {
+      if (verb.endsWith('e')) {
+        verb = verb.slice(0, -1) + 'ing';
+      } else if (verb.length > 0) {
+        verb = verb + 'ing';
+      }
+    }
+  
+    console.log(`Processed Verb: ${verb}`); // ✅ Debugging output
+  
+    const validDuration = isNaN(duration) || duration <= 0 ? 30 : duration;
+  
     try {
-      // ✅ Call Ninjas API
-      const response = await fetch(`https://api.api-ninjas.com/v1/caloriesburned?activity=${verb}`, {
+      // ✅ Encode the verb for safe API usage
+      const encodedVerb = encodeURIComponent(verb);
+      const response = await fetch(`https://api.api-ninjas.com/v1/caloriesburned?activity=${encodedVerb}`, {
         headers: { 'X-Api-Key': NINJAS_API_KEY }
       });
-
+  
       if (!response.ok) throw new Error(`API Error: ${response.status}`);
-
+  
       const data = await response.json();
-
+  
       if (data.length > 0) {
-        // ✅ API Result Found
-        setSearchResult(data[0]);
+        const apiCaloriesPerMinute = data[0].total_calories / data[0].duration_minutes;
+        const adjustedCalories = apiCaloriesPerMinute * validDuration;
+  
+        setSearchResult({
+          name: data[0].name,
+          total_calories: adjustedCalories
+        });
+  
         onAddExercise({
           exerciseName: data[0].name,
-          duration: data[0].duration_minutes,
-          caloriesBurned: data[0].total_calories,
+          duration: validDuration,
+          caloriesBurned: adjustedCalories,
           date: new Date().toISOString()
         });
       } else {
-        // ✅ MET Fallback if API has no results
-        handleMETFallback(rawInput);
+        handleMETFallback(rawInput, validDuration);
       }
     } catch (error) {
       console.error('API Error:', error);
       alert('API Error occurred. Using MET Fallback.');
-      handleMETFallback(rawInput);
+      handleMETFallback(rawInput, validDuration);
     }
   };
+  
+  
 
-  // ✅ Improved MET Fallback with Dynamic Duration
-  const handleMETFallback = (rawInput) => {
+  const handleMETFallback = (rawInput, validDuration) => {
     const matchedExercise = Object.keys(MET_VALUES).find(ex => {
-      const regex = new RegExp(`\\b${ex}\\b`, 'i'); // Word boundary match
+      const regex = new RegExp(`\\b${ex}\\b`, 'i');
       return regex.test(rawInput);
     });
 
     if (matchedExercise) {
-      // ✅ Extract duration from input (default to 30 if not found)
-      const durationMatch = rawInput.match(/(\d+)\s*(minutes|min|mins|m)/i);
-      const duration = durationMatch ? parseInt(durationMatch[1], 10) : 30;
-
       const met = MET_VALUES[matchedExercise];
-      const caloriesBurned = ((met * userWeight * 3.5) / 200) * duration;
-
-      console.log(`MET Fallback used for ${matchedExercise}: ${caloriesBurned.toFixed(2)} kcal for ${duration} minutes`);
+      const caloriesBurned = ((met * userWeight * 3.5) / 200) * validDuration;
 
       onAddExercise({
         exerciseName: matchedExercise,
-        duration,
+        duration: validDuration,
         caloriesBurned,
         date: new Date().toISOString()
       });
@@ -113,9 +129,19 @@ const ExerciseSearch = ({ onAddExercise }) => {
         type="text"
         value={input}
         onChange={(e) => setInput(e.target.value)}
-        placeholder="e.g., Basketball for 60 minutes"
+        placeholder="e.g., Running"
         className="border p-2 rounded w-full"
       />
+
+      <input
+        type="number"
+        value={duration}
+        onChange={(e) => setDuration(e.target.value === '' ? '' : parseInt(e.target.value, 10))}
+        placeholder="Duration (minutes)"
+        className="border p-2 rounded w-full mt-2"
+        min="1"
+      />
+
       <button
         onClick={handleSearch}
         className="bg-blue-500 text-white px-4 py-2 rounded mt-2"
