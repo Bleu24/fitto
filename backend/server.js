@@ -6,6 +6,7 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from './models/User.js';
+import Exercise from './models/Exercise.js';
 
 dotenv.config();
 
@@ -161,6 +162,7 @@ app.get('/api/user/profile', verifyToken, async (req, res) => {
       tdee: user.tdee,
       bmr: user.bmr,
       macros,
+      weight: user.weight, // ✅ Include weight
       goal: user.goal,  // ✅ Include goal
       rate: user.rate,   // ✅ Include rate
       targetWeight: user.targetWeight // ✅ Include target weight
@@ -193,16 +195,25 @@ app.post('/api/user/weight-log', verifyToken, async (req, res) => {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // Append new weight entry
+    // ✅ Add new weight entry to the weight log
     user.weightLog.push({ weight });
+
+    // ✅ Update the user's current weight in the user schema
+    user.weight = weight;
+
     await user.save();
 
-    res.status(201).json({ message: 'Weight logged successfully', weightLog: user.weightLog });
+    res.status(201).json({
+      message: 'Weight logged and profile updated successfully',
+      weightLog: user.weightLog,
+      currentWeight: user.weight
+    });
   } catch (error) {
     console.error('Weight Log Error:', error);
     res.status(500).json({ message: 'Server Error' });
   }
 });
+
 
 // ✅ DELETE Weight Entry
 app.delete('/api/user/weight-log/:id', verifyToken, async (req, res) => {
@@ -350,8 +361,13 @@ app.delete('/api/user/food-log/:meal/:foodId', verifyToken, async (req, res) => 
 });
 
 // ✅ Get all exercises for a specific user
+// ✅ Get all exercises for a specific user
 app.get('/api/exercise-log/user/:userId', verifyToken, async (req, res) => {
   try {
+    if (req.user.id !== req.params.userId) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
     const exercises = await Exercise.find({ userId: req.params.userId });
     res.status(200).json(exercises);
   } catch (error) {
@@ -361,34 +377,52 @@ app.get('/api/exercise-log/user/:userId', verifyToken, async (req, res) => {
 
 // ✅ Add a new exercise
 app.post('/api/exercise-log', verifyToken, async (req, res) => {
-  const { userId, exerciseName, duration, caloriesBurned, date } = req.body;
+  const { exerciseName, duration, caloriesBurned, MET } = req.body;
 
   try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // ✅ Calculate calories if not provided
+    const userWeightKg = user.weight; // User's weight in kg
+    const finalCaloriesBurned = caloriesBurned || (MET * userWeightKg * (duration / 60));
+
     const newExercise = new Exercise({
-      userId,
+      userId: req.user.id,
       exerciseName,
       duration,
-      caloriesBurned,
-      date: date || new Date()
+      caloriesBurned: finalCaloriesBurned,
+      MET
     });
 
     const savedExercise = await newExercise.save();
     res.status(201).json(savedExercise);
   } catch (error) {
+    console.error('Error saving exercise:', error);
     res.status(500).json({ message: 'Error saving exercise', error });
   }
 });
 
+
 // ✅ Delete an exercise by ID
 app.delete('/api/exercise-log/:id', verifyToken, async (req, res) => {
   try {
+    const exercise = await Exercise.findById(req.params.id);
+
+    if (!exercise) {
+      return res.status(404).json({ message: 'Exercise not found' });
+    }
+
+    if (exercise.userId.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
     await Exercise.findByIdAndDelete(req.params.id);
     res.status(200).json({ message: 'Exercise deleted' });
   } catch (error) {
     res.status(500).json({ message: 'Error deleting exercise', error });
   }
 });
-
 // ✅ (Optional) Update an exercise
 app.put('/api/exercise-log/:id',verifyToken, async (req, res) => {
   const { exerciseName, duration, caloriesBurned } = req.body;
