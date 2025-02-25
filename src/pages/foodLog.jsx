@@ -2,12 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import dotenv from 'dotenv';
 
-dotenv.config();
 
 // ✅ Load USDA API Key from .env or fallback to default
-const USDA_API_KEY = process.env.REACT_APP_USDA_API_KEY;
+const USDA_API_KEY = import.meta.env.VITE_USDA_API_KEY;
 
 const FoodLog = () => {
   const [foodLog, setFoodLog] = useState({
