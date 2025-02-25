@@ -349,7 +349,7 @@ app.delete('/api/user/food-log/:meal/:foodId', verifyToken, async (req, res) => 
   }
 });
 
-// ✅ GET all exercises for a specific user
+// ✅ Get all exercises for a specific user
 app.get('/api/exercise-log/user/:userId', async (req, res) => {
   try {
     const exercises = await Exercise.find({ userId: req.params.userId });
@@ -359,7 +359,7 @@ app.get('/api/exercise-log/user/:userId', async (req, res) => {
   }
 });
 
-// ✅ POST a new exercise
+// ✅ Add a new exercise
 app.post('/api/exercise-log', async (req, res) => {
   const { userId, exerciseName, duration, caloriesBurned, date } = req.body;
 
@@ -379,7 +379,7 @@ app.post('/api/exercise-log', async (req, res) => {
   }
 });
 
-// ✅ DELETE an exercise by ID
+// ✅ Delete an exercise by ID
 app.delete('/api/exercise-log/:id', async (req, res) => {
   try {
     await Exercise.findByIdAndDelete(req.params.id);
@@ -389,7 +389,7 @@ app.delete('/api/exercise-log/:id', async (req, res) => {
   }
 });
 
-// ✅ (Optional) PUT to edit an exercise
+// ✅ (Optional) Update an exercise
 app.put('/api/exercise-log/:id', async (req, res) => {
   const { exerciseName, duration, caloriesBurned } = req.body;
 
