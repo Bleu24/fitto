@@ -1,5 +1,10 @@
 import { useState } from 'react';
 import nlp from 'compromise';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const NINJAS_API_KEY = process.env.REACT_APP_NINJAS_API_KEY;
 
 const MET_VALUES = {
   running: 9.8,
@@ -20,7 +25,7 @@ const ExerciseSearch = ({ onAddExercise }) => {
 
     try {
       const response = await fetch(`https://api.api-ninjas.com/v1/caloriesburned?activity=${verb}`, {
-        headers: { 'X-Api-Key': 'YOUR_API_KEY' }
+        headers: { 'X-Api-Key': NINJAS_API_KEY }
       });
       const data = await response.json();
 
