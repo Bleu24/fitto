@@ -5,7 +5,7 @@ import Login from './pages/login';
 import Setup from './pages/SetupWizard';
 import Dashboard from './pages/dashboard';
 import FoodLog from './pages/foodLog';
-import ExerciseLog from './exercises/exerciselog';
+// import ExerciseLog from './exercises/exerciselog';
 import './App.css';
 
 function App() {
@@ -18,7 +18,7 @@ function App() {
         <Route path="/setup" element={<Setup />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/food-log" element={<FoodLog />} />
-        <Route path="/exercise-log" element={<ExerciseLog />} />
+        {/* <Route path="/exercise-log" element={<ExerciseLog />} /> */}
       </Routes>
     </>
   );
