@@ -231,7 +231,7 @@ app.delete('/api/user/weight-log/:id', verifyToken, async (req, res) => {
   }
 });
 
-// ✅ EDIT Weight Entry
+// ✅ EDIT Weight Entry with Current Weight Update
 app.put('/api/user/weight-log/:id', verifyToken, async (req, res) => {
   const { weight } = req.body;
   try {
@@ -241,15 +241,29 @@ app.put('/api/user/weight-log/:id', verifyToken, async (req, res) => {
     const weightEntry = user.weightLog.id(req.params.id);
     if (!weightEntry) return res.status(404).json({ message: 'Weight entry not found' });
 
+    // ✅ Update the specific weight entry
     weightEntry.weight = weight;
+
+    // ✅ Check if it's the last logged weight
+    const isLastEntry = user.weightLog[user.weightLog.length - 1]._id.toString() === req.params.id;
+
+    if (isLastEntry) {
+      user.weight = weight; // ✅ Update current weight in User schema
+    }
+
     await user.save();
 
-    res.status(200).json({ message: 'Weight entry updated', weightLog: user.weightLog });
+    res.status(200).json({
+      message: 'Weight entry updated',
+      weightLog: user.weightLog,
+      currentWeight: user.weight // ✅ Return updated current weight
+    });
   } catch (error) {
     console.error('Edit Error:', error);
     res.status(500).json({ message: 'Server Error' });
   }
 });
+
 
 // ✅ Set or Update Target Weight
 app.put('/api/user/target-weight', verifyToken, async (req, res) => {
