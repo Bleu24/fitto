@@ -133,23 +133,34 @@ const Dashboard = () => {
   const handleWeightSubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
-
+  
     try {
       const response = await fetch('http://localhost:5000/api/user/weight-log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': token },
         body: JSON.stringify({ weight: newWeight })
       });
-
+  
       if (response.ok) {
         const data = await response.json();
-        setWeightLog(data.weightLog);
+        setWeightLog(data.weightLog); // ✅ Update weight log in UI
+  
+        // ✅ Update the userData to reflect new weight
+        setUserData(prev => ({
+          ...prev,
+          weight: data.currentWeight
+        }));
+  
         setNewWeight('');
+        console.log("Updated current weight to:", data.currentWeight);
+      } else {
+        console.error('Failed to log weight');
       }
     } catch (error) {
       console.error('Error logging weight:', error);
     }
   };
+  
 
   const handleEdit = (id, weight) => {
     setEditMode(id);
