@@ -1,4 +1,3 @@
-// ExerciseLog.jsx
 import { useState, useEffect } from 'react';
 import ExerciseSearch from './ExerciseSearch';
 import ExerciseEntryCard from './ExerciseEntryCard';
@@ -7,51 +6,95 @@ import SummaryCard from './SummaryCard';
 const ExerciseLog = () => {
   const [exerciseLog, setExerciseLog] = useState([]);
   const [todayCalories, setTodayCalories] = useState(0);
+  const [tdee, setTDEE] = useState(2043); // Replace with dynamic user TDEE if available
+  const [userId, setUserId] = useState(localStorage.getItem('userId')); // Assuming userId stored in localStorage
 
   useEffect(() => {
     fetchExerciseLog();
   }, []);
 
+  // ✅ Fetch Exercise Log from Backend
   const fetchExerciseLog = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/exercise-log/user/{userId}');
+      const token = localStorage.getItem('token');
+      const userId = JSON.parse(atob(token.split('.')[1])).id; // Extract userId from JWT
+  
+      const response = await fetch(`http://localhost:5000/api/exercise-log/user/${userId}`, {
+        headers: { 'Authorization': token }
+      });
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+  
       const data = await response.json();
-      setExerciseLog(data);
-      calculateTodayCalories(data);
+      setExerciseLog(Array.isArray(data) ? data : []); // Ensure it's an array
+      calculateTodayCalories(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching exercise log:', error);
     }
   };
+  
 
+  // ✅ Calculate Today's Burned Calories
   const calculateTodayCalories = (log) => {
     const today = new Date().toISOString().split('T')[0];
-    const total = log
-      .filter(entry => entry.date.startsWith(today))
-      .reduce((sum, entry) => sum + entry.caloriesBurned, 0);
+    const validLog = Array.isArray(log) ? log : []; // Default to empty array if invalid
+  
+    const total = validLog
+      .filter(entry => entry.date && entry.date.startsWith(today))
+      .reduce((sum, entry) => sum + (entry.caloriesBurned || 0), 0);
+  
     setTodayCalories(total);
   };
+  
 
-  const handleAddExercise = (newExercise) => {
-    setExerciseLog(prev => [...prev, newExercise]);
-    setTodayCalories(prev => prev + newExercise.caloriesBurned);
+  // ✅ Handle Adding New Exercise
+  const handleAddExercise = async (newExercise) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/exercise-log', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': localStorage.getItem('token'),
+        },
+        body: JSON.stringify({
+          ...newExercise,
+          userId: userId, // ✅ Associate exercise with user
+        }),
+      });
+
+      if (response.ok) {
+        const savedExercise = await response.json();
+        setExerciseLog(prev => [...prev, savedExercise]);
+        setTodayCalories(prev => prev + savedExercise.caloriesBurned);
+      } else {
+        console.error('Failed to add exercise');
+      }
+    } catch (error) {
+      console.error('Error adding exercise:', error);
+    }
   };
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <h1 className="text-3xl font-bold mb-4">Exercise Log</h1>
 
-      {/* 🔍 Exercise Search */}
+      {/* 🔍 Exercise Search with List Selection */}
       <ExerciseSearch onAddExercise={handleAddExercise} />
 
-      {/* 📊 Summary of Calories Burned */}
-      <SummaryCard todayCalories={todayCalories} />
+      {/* 📊 Summary Card with TDEE and Burned Calories */}
+      <SummaryCard 
+        todayCalories={todayCalories}
+        tdee={tdee}
+      />
 
       {/* 📋 List of Exercises */}
       <div className="mt-4">
         {exerciseLog.length > 0 ? (
           exerciseLog.map((exercise) => (
             <ExerciseEntryCard
-              key={exercise._id}
+              key={exercise._id} // ✅ Use unique _id
               exercise={exercise}
               onUpdate={fetchExerciseLog}
             />
