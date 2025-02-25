@@ -237,6 +237,7 @@ const Dashboard = () => {
         <nav className="space-x-6 flex items-center">
           <a href="/" className="hover:text-orange-400 text-lg">Home</a>
           <a href="/food-log" className="hover:text-orange-400 text-lg">Food Log</a>
+          <a href="/exercise-log" className="hover:text-orange-400 text-lg">Exercise Log</a>
           <a href="/support" className="hover:text-orange-400 text-lg">Support</a>
           <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg ml-4">Logout</button>
         </nav>
