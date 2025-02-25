@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
+import { CircularProgressbar, CircularProgressbarWithChildren, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -19,6 +19,7 @@ const Dashboard = () => {
   const [targetWeight, setTargetWeight] = useState('');
   const [editMode, setEditMode] = useState(null);
   const [editWeight, setEditWeight] = useState('');
+  const [exerciseSummary, setExerciseSummary] = useState(0); // ✅ New: Track exercise calories
   const [foodSummary, setFoodSummary] = useState({
     calories: 0,
     carbs: 0,
@@ -33,6 +34,7 @@ const Dashboard = () => {
     fetchUserData();
     fetchWeightLog();
     fetchFoodLog();
+    fetchExerciseLog(); // ✅ New: Fetch Exercise Log
   }, []);
 
   // ✅ Fetch User Profile
@@ -113,6 +115,24 @@ const Dashboard = () => {
     }
   };
 
+  const fetchExerciseLog = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch('http://localhost:5000/api/exercise-log/user/' + userData.id, {
+        headers: { 'Authorization': token }
+      });
+  
+      if (response.ok) {
+        const data = await response.json();
+        const totalBurned = data.reduce((sum, exercise) => sum + exercise.caloriesBurned, 0);
+        setExerciseSummary(totalBurned); // ✅ Sum exercise calories
+      }
+    } catch (error) {
+      console.error('Error fetching exercise log:', error);
+    }
+  };
+  
+
   // ✅ Calculate Total Calories and Macros from Food Log
   const calculateFoodTotals = (foodLog) => {
     let totalCalories = 0, totalCarbs = 0, totalProtein = 0, totalFat = 0;
@@ -169,23 +189,38 @@ const Dashboard = () => {
 
   const handleEditSave = async (id) => {
     const token = localStorage.getItem('token');
-
+  
     try {
       const response = await fetch(`http://localhost:5000/api/user/weight-log/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': token },
         body: JSON.stringify({ weight: editWeight })
       });
-
+  
       if (response.ok) {
         const data = await response.json();
+        console.log("Updated Data:", data);
+  
+        // ✅ Update weight log in UI
         setWeightLog(data.weightLog);
-        setEditMode(null);
+  
+        // ✅ Update current weight
+        setUserData((prev) => ({
+          ...prev,
+          weight: data.currentWeight // ✅ This is now sent by backend
+        }));
+  
+        setEditMode(null); // Exit edit mode
+        setEditWeight('');
+        console.log("Updated current weight to:", data.currentWeight);
+      } else {
+        console.error('Failed to edit weight');
       }
     } catch (error) {
       console.error('Error editing weight:', error);
     }
   };
+  
 
   const handleDelete = async (id) => {
     const token = localStorage.getItem('token');
@@ -368,7 +403,7 @@ const Dashboard = () => {
         <div className="mt-4">
           <h3 className="text-lg font-semibold mb-2">Weight Log</h3>
           <ul>
-            {weightLog.map((entry) => (
+            {weightLog.map((entry, index) => (
               <li key={entry._id} className="flex justify-between items-center border-b py-2">
                 {editMode === entry._id ? (
                   <>
@@ -378,15 +413,38 @@ const Dashboard = () => {
                       onChange={(e) => setEditWeight(e.target.value)}
                       className="border p-1 rounded-lg"
                     />
-                    <button onClick={() => handleEditSave(entry._id)} className="bg-green-500 text-white px-2 py-1 rounded-lg ml-2">Save</button>
-                    <button onClick={() => setEditMode(null)} className="bg-gray-400 text-white px-2 py-1 rounded-lg ml-2">Cancel</button>
+                    <button
+                      onClick={() => handleEditSave(entry._id)}
+                      className="bg-green-500 text-white px-2 py-1 rounded-lg ml-2"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => setEditMode(null)}
+                      className="bg-gray-400 text-white px-2 py-1 rounded-lg ml-2"
+                    >
+                      Cancel
+                    </button>
                   </>
                 ) : (
                   <>
                     <span>{new Date(entry.date).toLocaleDateString()} - {entry.weight} kg</span>
                     <div>
-                      <button onClick={() => handleEdit(entry._id, entry.weight)} className="bg-yellow-500 text-white px-2 py-1 rounded-lg mr-2">Edit</button>
-                      <button onClick={() => handleDelete(entry._id)} className="bg-red-500 text-white px-2 py-1 rounded-lg">Delete</button>
+                      <button
+                        onClick={() => {
+                          setEditMode(entry._id);
+                          setEditWeight(entry.weight); // Load current weight for editing
+                        }}
+                        className="bg-yellow-500 text-white px-2 py-1 rounded-lg mr-2"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(entry._id)}
+                        className="bg-red-500 text-white px-2 py-1 rounded-lg"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </>
                 )}
