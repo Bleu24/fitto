@@ -9,6 +9,7 @@ const MET_VALUES = {
   walking: 3.8,
   basketball: 8.0, // ✅ Basketball included
   "stair machine": 8.8,
+  weightlifting: 5.0,
   swimming: 6.0,
   yoga: 3.0
 };
