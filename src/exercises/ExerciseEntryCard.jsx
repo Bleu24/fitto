@@ -1,10 +1,27 @@
 const ExerciseEntryCard = ({ exercise, onUpdate }) => {
-    const handleDelete = async () => {
+    const handleDeleteExercise = async (exerciseId) => {
+      const token = localStorage.getItem('token'); // ✅ Ensure token is retrieved
+  
       try {
-        await fetch(`http://localhost:5000/api/exercise-log/${exercise._id}`, {
-          method: 'DELETE'
+        const response = await fetch(`http://localhost:5000/api/exercise-log/${exerciseId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token // ✅ Include the token
+          }
         });
-        onUpdate();
+  
+        if (response.ok) {
+          console.log("Exercise deleted successfully");
+          // ✅ Refresh the exercise log after deletion
+          onUpdate(); // ✅ Trigger parent update function
+        } else if (response.status === 403) {
+          console.error('Unauthorized: Cannot delete this exercise');
+        } else if (response.status === 401) {
+          console.error('Unauthorized: Token is missing or invalid');
+        } else {
+          console.error('Failed to delete exercise');
+        }
       } catch (error) {
         console.error('Error deleting exercise:', error);
       }
@@ -18,7 +35,7 @@ const ExerciseEntryCard = ({ exercise, onUpdate }) => {
           <p>{new Date(exercise.date).toLocaleString()}</p>
         </div>
         <button
-          onClick={handleDelete}
+          onClick={() => handleDeleteExercise(exercise._id)} // ✅ Pass exerciseId here
           className="bg-red-500 text-white px-3 py-1 rounded"
         >
           Delete
