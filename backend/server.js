@@ -158,6 +158,7 @@ app.get('/api/user/profile', verifyToken, async (req, res) => {
     };
 
     res.status(200).json({
+      id: user._id,
       username: user.username,
       tdee: user.tdee,
       bmr: user.bmr,
@@ -375,10 +376,11 @@ app.delete('/api/user/food-log/:meal/:foodId', verifyToken, async (req, res) => 
 });
 
 // ✅ Get all exercises for a specific user
-// ✅ Get all exercises for a specific user
 app.get('/api/exercise-log/user/:userId', verifyToken, async (req, res) => {
   try {
-    if (req.user.id !== req.params.userId) {
+    // ✅ Ensure valid MongoDB ObjectId comparison
+    if (!mongoose.Types.ObjectId.isValid(req.params.userId) || 
+        req.user.id.toString() !== req.params.userId) {
       return res.status(403).json({ message: 'Unauthorized' });
     }
 
@@ -397,10 +399,11 @@ app.post('/api/exercise-log', verifyToken, async (req, res) => {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // ✅ Calculate calories if not provided
-    const userWeightKg = user.weight; // User's weight in kg
+    // ✅ Calculate calories burned if not provided
+    const userWeightKg = user.weight;
     const finalCaloriesBurned = caloriesBurned || (MET * userWeightKg * (duration / 60));
 
+    // ✅ Create a new exercise log entry
     const newExercise = new Exercise({
       userId: req.user.id,
       exerciseName,
@@ -410,7 +413,16 @@ app.post('/api/exercise-log', verifyToken, async (req, res) => {
     });
 
     const savedExercise = await newExercise.save();
-    res.status(201).json(savedExercise);
+
+    // ✅ 🔥 THIS IS WHERE TDEE IS UPDATED 🔥
+    user.tdee += finalCaloriesBurned; // Add calories burned to TDEE
+    await user.save();
+
+    res.status(201).json({
+      message: 'Exercise logged and TDEE updated',
+      savedExercise,
+      updatedTDEE: user.tdee  // ✅ Send updated TDEE to frontend
+    });
   } catch (error) {
     console.error('Error saving exercise:', error);
     res.status(500).json({ message: 'Error saving exercise', error });
