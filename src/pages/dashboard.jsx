@@ -6,6 +6,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 const Dashboard = () => {
   const [userData, setUserData] = useState({
+    id: null,
     tdee: 0,
     bmr: 0,
     macros: { carbs: 0, protein: 0, fat: 0 },
@@ -34,7 +35,6 @@ const Dashboard = () => {
     fetchUserData();
     fetchWeightLog();
     fetchFoodLog();
-    fetchExerciseLog(); // ✅ New: Fetch Exercise Log
   }, []);
 
   // ✅ Fetch User Profile
@@ -54,6 +54,7 @@ const Dashboard = () => {
       if (response.ok) {
         const data = await response.json();
         setUserData({
+          id: data._id,
           tdee: data.tdee,
           bmr: data.bmr,
           macros: {
@@ -65,6 +66,8 @@ const Dashboard = () => {
           rate: data.rate,
           targetWeight: data.targetWeight || null
         });
+
+        fetchExerciseLog(data._id)
       } else {
         console.error('Failed to fetch user data');
         navigate('/login');
@@ -115,22 +118,25 @@ const Dashboard = () => {
     }
   };
 
-  const fetchExerciseLog = async () => {
+  const fetchExerciseLog = async (userId) => {
     const token = localStorage.getItem('token');
+    if (!userId) return; 
+  
     try {
-      const response = await fetch('http://localhost:5000/api/exercise-log/user/' + userData.id, {
+      const response = await fetch(`http://localhost:5000/api/exercise-log/user/${userId}`, {
         headers: { 'Authorization': token }
       });
   
       if (response.ok) {
         const data = await response.json();
         const totalBurned = data.reduce((sum, exercise) => sum + exercise.caloriesBurned, 0);
-        setExerciseSummary(totalBurned); // ✅ Sum exercise calories
+        setExerciseSummary(totalBurned); // ✅ Track exercise calories only
       }
     } catch (error) {
       console.error('Error fetching exercise log:', error);
     }
   };
+  
   
 
   // ✅ Calculate Total Calories and Macros from Food Log
@@ -275,6 +281,9 @@ const Dashboard = () => {
     navigate('/login');
   };
 
+  console.log("Current TDEE:", userData.tdee);
+
+
   return (
     <div className="p-8 bg-gray-50 min-h-screen pt-20">
       {/* ✅ HEADER */}
@@ -296,17 +305,24 @@ const Dashboard = () => {
         {/* ✅ TDEE Progress Bar */}
         <div className="bg-white shadow-lg rounded-lg p-6">
           <h2 className="text-xl font-semibold">Calories (TDEE)</h2>
+          <p>DEBUG: {userData.tdee} kcal</p> {/* ✅ Updated TDEE shown for debugging */}
+          
           <CircularProgressbar
-            value={Math.min((foodSummary.calories / userData.tdee) * 100, 100)}
-            text={`${foodSummary.calories}/${Math.round(userData.tdee)} kcal`}
+            value={Math.max(((foodSummary.calories - exerciseSummary) / userData.tdee) * 100, 0)} // ✅ Adjusted Calculation
+            text={`${Math.max(foodSummary.calories - exerciseSummary, 0)} / ${Math.round(userData.tdee)} kcal`}
             styles={buildStyles({
               textColor: '#333',
-              pathColor: '#3b82f6',
+              pathColor: '#3b82f6', // ✅ Blue for consumed calories
               trailColor: '#d1d5db',
               textSize: '10px'
             })}
-          />
+          />  
+
+          <p className="text-md text-gray-500 mt-2">
+            Burned: <span className="text-red-500">{exerciseSummary.toFixed(2)} kcal</span>
+          </p>
         </div>
+
 
         {/* ✅ Macros Progress Bars */}
         <div className="bg-white shadow-lg rounded-lg p-6">
