@@ -414,8 +414,6 @@ app.post('/api/exercise-log', verifyToken, async (req, res) => {
 
     const savedExercise = await newExercise.save();
 
-    // ✅ 🔥 THIS IS WHERE TDEE IS UPDATED 🔥
-    user.tdee += finalCaloriesBurned; // Add calories burned to TDEE
     await user.save();
 
     res.status(201).json({
@@ -449,6 +447,7 @@ app.delete('/api/exercise-log/:id', verifyToken, async (req, res) => {
     res.status(500).json({ message: 'Error deleting exercise', error });
   }
 });
+
 // ✅ (Optional) Update an exercise
 app.put('/api/exercise-log/:id',verifyToken, async (req, res) => {
   const { exerciseName, duration, caloriesBurned } = req.body;
