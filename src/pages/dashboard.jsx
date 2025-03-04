@@ -67,7 +67,7 @@ const Dashboard = () => {
           targetWeight: data.targetWeight || null
         });
 
-        fetchExerciseLog(data._id)
+        fetchExerciseLog(data.id)
       } else {
         console.error('Failed to fetch user data');
         navigate('/login');
@@ -99,43 +99,71 @@ const Dashboard = () => {
   const fetchFoodLog = async () => {
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch('http://localhost:5000/api/user/food-log', {
-        headers: { 'Authorization': token }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const { totalCalories, totalCarbs, totalProtein, totalFat } = calculateFoodTotals(data.foodLog);
-        setFoodSummary({
-          calories: totalCalories,
-          carbs: totalCarbs,
-          protein: totalProtein,
-          fat: totalFat
+        const response = await fetch('http://localhost:5000/api/user/food-log', {
+            headers: { 'Authorization': token }
         });
-      }
-    } catch (error) {
-      console.error('Error fetching food log:', error);
-    }
-  };
 
-  const fetchExerciseLog = async (userId) => {
-    const token = localStorage.getItem('token');
-    if (!userId) return; 
-  
-    try {
-      const response = await fetch(`http://localhost:5000/api/exercise-log/user/${userId}`, {
-        headers: { 'Authorization': token }
-      });
-  
-      if (response.ok) {
-        const data = await response.json();
-        const totalBurned = data.reduce((sum, exercise) => sum + exercise.caloriesBurned, 0);
-        setExerciseSummary(totalBurned); // ✅ Track exercise calories only
-      }
+        if (response.ok) {
+            const data = await response.json();
+            console.log("✅ Food Log Data:", data.foodLog);  // Show raw food log data
+
+            const { totalCalories, totalCarbs, totalProtein, totalFat } = calculateFoodTotals(data.foodLog);
+
+            console.log("🔎 Calculated Totals from Food Log:");
+            console.log("Total Calories:", totalCalories);
+            console.log("Total Carbs:", totalCarbs);
+            console.log("Total Protein:", totalProtein);
+            console.log("Total Fat:", totalFat);
+
+            setFoodSummary({
+                calories: totalCalories,
+                carbs: totalCarbs,
+                protein: totalProtein,
+                fat: totalFat
+            });
+        } else {
+            console.error('❌ Failed to fetch food log');
+        }
     } catch (error) {
-      console.error('Error fetching exercise log:', error);
+        console.error('❌ Error fetching food log:', error);
     }
-  };
+};
+
+
+const fetchExerciseLog = async (userId) => {
+
+  if (!userId) {
+    console.warn("⚠️ fetchExerciseLog called with no userId - skipping.");
+    return;
+}
+
+  console.log("🛠️ Exercise Log Fetch Starting for user:", userId);  // New log
+
+  const token = localStorage.getItem('token');
+  if (!userId) {
+      console.warn("⚠️ No userId provided, skipping exercise fetch.");
+      return;
+  }
+
+  try {
+      const response = await fetch(`http://localhost:5000/api/exercise-log/user/${userId}`, {
+          headers: { 'Authorization': token }
+      });
+
+      if (response.ok) {
+          const data = await response.json();
+          console.log("✅ Fetched Exercise Log Data:", data);  // Existing log
+          const totalBurned = data.reduce((sum, exercise) => sum + exercise.caloriesBurned, 0);
+          console.log("🔥 Total Calories Burned:", totalBurned);  // Existing log
+          setExerciseSummary(totalBurned);
+      } else {
+          console.error('❌ Failed to fetch exercise log - Status:', response.status);
+      }
+  } catch (error) {
+      console.error('❌ Error fetching exercise log:', error);
+  }
+};
+
   
   
 
@@ -281,7 +309,7 @@ const Dashboard = () => {
     navigate('/login');
   };
 
-  console.log("Current TDEE:", userData.tdee);
+  const availableCalories = userData.tdee + exerciseSummary;
 
 
   return (
@@ -305,18 +333,18 @@ const Dashboard = () => {
         {/* ✅ TDEE Progress Bar */}
         <div className="bg-white shadow-lg rounded-lg p-6">
           <h2 className="text-xl font-semibold">Calories (TDEE)</h2>
-          <p>DEBUG: {userData.tdee} kcal</p> {/* ✅ Updated TDEE shown for debugging */}
           
           <CircularProgressbar
-            value={Math.max(((foodSummary.calories - exerciseSummary) / userData.tdee) * 100, 0)} // ✅ Adjusted Calculation
-            text={`${Math.max(foodSummary.calories - exerciseSummary, 0)} / ${Math.round(userData.tdee)} kcal`}
+            value={Math.max((foodSummary.calories / availableCalories) * 100, 0)}
+            text={`${foodSummary.calories} / ${Math.round(availableCalories)} kcal`}
             styles={buildStyles({
               textColor: '#333',
-              pathColor: '#3b82f6', // ✅ Blue for consumed calories
+              pathColor: '#3b82f6',
               trailColor: '#d1d5db',
               textSize: '10px'
             })}
-          />  
+          />
+
 
           <p className="text-md text-gray-500 mt-2">
             Burned: <span className="text-red-500">{exerciseSummary.toFixed(2)} kcal</span>
