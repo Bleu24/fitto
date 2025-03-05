@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import AiChatButton from '../ai/AiChatButton';
+import AiChatBox from '../ai/AiChatBox';
 
 
 // ✅ Load USDA API Key from .env or fallback to default
@@ -299,14 +300,6 @@ const FoodLog = () => {
           )}
         </div>
       ))}
-
-    <AiChatButton onClick={() => setShowChat(true)} />
-    {showChat && (
-          <AiChatBox 
-              onClose={() => setShowChat(false)} 
-              userData={userData} 
-          />
-      )}
     </div>
   );
 };
