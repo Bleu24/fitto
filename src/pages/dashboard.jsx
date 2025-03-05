@@ -28,6 +28,8 @@ const Dashboard = () => {
     fat: 0
   });
 
+  const [alerts, setAlerts] = useState([]);
+
   const navigate = useNavigate();
 
   // ✅ Fetch User Data & Weight Log & Food Log
@@ -35,6 +37,7 @@ const Dashboard = () => {
     fetchUserData();
     fetchWeightLog();
     fetchFoodLog();
+    fetchDashboardSummary();
   }, []);
 
   // ✅ Fetch User Profile
@@ -161,6 +164,25 @@ const fetchExerciseLog = async (userId) => {
       }
   } catch (error) {
       console.error('❌ Error fetching exercise log:', error);
+  }
+};
+
+const fetchDashboardSummary = async () => {
+  const token = localStorage.getItem('token');
+
+  try {
+      const response = await fetch('http://localhost:5000/api/user/dashboard-summary', {
+          headers: { 'Authorization': token }
+      });
+
+      if (response.ok) {
+          const data = await response.json();
+          setAlerts(data.alerts); // ✅ Set the fetched alerts into state
+      } else {
+          console.error('❌ Failed to fetch dashboard summary');
+      }
+  } catch (error) {
+      console.error('❌ Error fetching dashboard summary:', error);
   }
 };
 
@@ -328,6 +350,19 @@ const fetchExerciseLog = async (userId) => {
 
       {/* ✅ MAIN CONTENT */}
       <h1 className="text-3xl font-bold mb-6">Your Daily Summary</h1>
+        <div className="bg-white shadow-lg rounded-lg p-4 mb-6">
+            <h2 className="text-lg font-semibold mb-2">Personalized Alerts</h2>
+            {alerts.length > 0 ? (
+                <ul className="list-disc pl-5 text-red-500">
+                    {alerts.map((alert, index) => (
+                        <li key={index}>{alert}</li>
+                    ))}
+                </ul>
+            ) : (
+                <p className="text-gray-500">No alerts for today. Keep up the good work! 🎉</p>
+            )}
+        </div>
+
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* ✅ TDEE Progress Bar */}
