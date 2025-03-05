@@ -464,6 +464,88 @@ app.put('/api/exercise-log/:id',verifyToken, async (req, res) => {
   }
 });
 
+//Expert System summary (Simple AI)
+app.get('/api/user/dashboard-summary', verifyToken, async (req, res) => {
+  try {
+      const user = await User.findById(req.user.id);
+      if (!user) return res.status(404).json({ message: 'User not found' });
+
+      // Fetch today's food log (you already have this logic)
+      const today = new Date().toISOString().split('T')[0];
+      const foodLog = user.foodLog;
+      let totalCalories = 0;
+
+      Object.values(foodLog).forEach(meal => {
+          meal.forEach(food => {
+              const entryDate = new Date(food.date).toISOString().split('T')[0];
+              if (entryDate === today) {
+                  totalCalories += food.calories;
+              }
+          });
+      });
+
+      // Fetch last 14 days of weight log
+      const fourteenDaysAgo = new Date();
+      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+      const recentWeights = user.weightLog.filter(entry => entry.date >= fourteenDaysAgo);
+
+      const alerts = [];
+
+      // Rule 1: Under-eating (less than 70% of TDEE for 3 days straight)
+      const calorieHistory = [];
+      for (let i = 0; i < 3; i++) {
+          const checkDate = new Date();
+          checkDate.setDate(checkDate.getDate() - i);
+          const dateString = checkDate.toISOString().split('T')[0];
+
+          let dailyCalories = 0;
+          Object.values(foodLog).forEach(meal => {
+              meal.forEach(food => {
+                  const entryDate = new Date(food.date).toISOString().split('T')[0];
+                  if (entryDate === dateString) {
+                      dailyCalories += food.calories;
+                  }
+              });
+          });
+
+          calorieHistory.push(dailyCalories);
+      }
+
+      if (calorieHistory.every(cals => cals < user.tdee * 0.7)) {
+          alerts.push("You might be under-eating. Consider reviewing your meal plan.");
+      }
+
+      // Rule 2: Weight Plateau (14 days no change)
+      if (recentWeights.length >= 2) {
+          const firstWeight = recentWeights[0].weight;
+          const lastWeight = recentWeights[recentWeights.length - 1].weight;
+
+          if (Math.abs(firstWeight - lastWeight) < 0.5) {
+              alerts.push("You may have hit a plateau. Consider adjusting your workout or calorie intake.");
+          }
+      }
+
+      // Rule 3: Exercise Balance (Check if 80%+ is cardio)
+      const exercises = await Exercise.find({ userId: req.user.id, date: { $gte: fourteenDaysAgo } });
+
+      const cardioExercises = exercises.filter(ex => {
+          const lower = ex.exerciseName.toLowerCase();
+          return lower.includes('run') || lower.includes('jog') || lower.includes('bike') || lower.includes('swim');
+      });
+
+      if (exercises.length > 0 && (cardioExercises.length / exercises.length) > 0.8) {
+          alerts.push("Great work on cardio! Adding some strength training could improve muscle tone and metabolism.");
+      }
+
+      res.status(200).json({ alerts });
+  } catch (error) {
+      console.error('Dashboard Summary Error:', error);
+      res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
 
 
 
