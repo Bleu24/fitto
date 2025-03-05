@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { CircularProgressbar, CircularProgressbarWithChildren, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import AiChatButton from '../ai/AiChatButton';
+import AiChatBox from '../ai/AiChatBox';
 
 const Dashboard = () => {
   const [userData, setUserData] = useState({
@@ -14,7 +16,7 @@ const Dashboard = () => {
     rate: 0,
     targetWeight: null
   });
-
+  const [showChat, setShowChat] = useState(false);
   const [weightLog, setWeightLog] = useState([]);
   const [newWeight, setNewWeight] = useState('');
   const [targetWeight, setTargetWeight] = useState('');
@@ -336,6 +338,7 @@ const fetchDashboardSummary = async () => {
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen pt-20">
+      
       {/* ✅ HEADER */}
       <header className="w-full h-16 flex justify-between items-center py-4 px-8 bg-blue-800 shadow-lg fixed top-0 left-0 z-10 text-white">
         <h1 className="text-4xl font-bold"><a href="/">Fitto</a></h1>
@@ -532,6 +535,14 @@ const fetchDashboardSummary = async () => {
           </ul>
         </div>
       </div>
+      <AiChatButton onClick={() => setShowChat(true)} />
+      {showChat && (
+          <AiChatBox 
+              onClose={() => setShowChat(false)} 
+              userData={userData} 
+          />
+      )}
+
     </div>
   );
 };
