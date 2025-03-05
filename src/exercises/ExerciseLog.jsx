@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import ExerciseSearch from './ExerciseSearch';
 import ExerciseEntryCard from './ExerciseEntryCard';
 import SummaryCard from './SummaryCard';
+import AiChatButton from '../ai/AiChatButton';
 
 const ExerciseLog = () => {
     const [exerciseLog, setExerciseLog] = useState([]);
     const [todayCalories, setTodayCalories] = useState(0);
     const navigate = useNavigate();
+    const [showChat, setShowChat] = useState(false);
 
     useEffect(() => {
         fetchExerciseLog();  // Fetch everything on first load
@@ -163,6 +165,8 @@ const ExerciseLog = () => {
                     )}
                 </div>
             </div>
+
+            <AiChatButton onClick={() => setShowChat(true)} />
         </>
     );
 };

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import AiChatButton from '../ai/AiChatButton';
 
 
 // ✅ Load USDA API Key from .env or fallback to default
@@ -30,6 +31,7 @@ const FoodLog = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date()); // ✅ State for Date Picker
+  const [showChat, setShowChat] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -173,6 +175,7 @@ const FoodLog = () => {
         <nav className="space-x-6 flex items-center">
           <a href="/" className="hover:text-orange-400 text-lg">Home</a>
           <a href="/dashboard" className="hover:text-orange-400 text-lg">Dashboard</a>
+          <a href="/exercise-log" className="hover:text-orange-400 text-lg">Exercise Log</a>
           <a href="/support" className="hover:text-orange-400 text-lg">Support</a>
           <button 
             onClick={handleLogout}
@@ -296,6 +299,8 @@ const FoodLog = () => {
           )}
         </div>
       ))}
+
+    <AiChatButton onClick={() => setShowChat(true)} />
     </div>
   );
 };
