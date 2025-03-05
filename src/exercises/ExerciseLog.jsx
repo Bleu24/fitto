@@ -4,6 +4,7 @@ import ExerciseSearch from './ExerciseSearch';
 import ExerciseEntryCard from './ExerciseEntryCard';
 import SummaryCard from './SummaryCard';
 import AiChatButton from '../ai/AiChatButton';
+import AiChatBox from '../ai/AiChatBox';
 
 const ExerciseLog = () => {
     const [exerciseLog, setExerciseLog] = useState([]);
@@ -165,14 +166,6 @@ const ExerciseLog = () => {
                     )}
                 </div>
             </div>
-
-            <AiChatButton onClick={() => setShowChat(true)} />
-            {showChat && (
-                <AiChatBox 
-                    onClose={() => setShowChat(false)} 
-                    userData={userData} 
-                />
-            )}
         </>
     );
 };
