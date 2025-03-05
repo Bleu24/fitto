@@ -23,9 +23,12 @@ const AiChatBox = ({ onClose, userData }) => {
         };
 
         try {
+            const token = localStorage.getItem('token');    
             const res = await fetch('http://localhost:5000/api/ai-recommendation', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 
+                            'Authorization': token
+                 },
                 body: JSON.stringify(requestData)
             });
 
