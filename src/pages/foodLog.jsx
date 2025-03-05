@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import dotenv from 'dotenv';
+import AiChatButton from '../ai/AiChatButton';
+
 
 // ✅ Load USDA API Key from .env or fallback to default
-const USDA_API_KEY = import.meta.env.VITE_USDA_API_KEY || '4tZIyKQEvg8QpzP8FTpQOSbq4kASuy0CYoOWPQcr';
+const USDA_API_KEY = import.meta.env.VITE_USDA_API_KEY;
 
 const FoodLog = () => {
   const [foodLog, setFoodLog] = useState({
@@ -21,13 +22,16 @@ const FoodLog = () => {
     calories: '',
     carbs: '',
     protein: '',
-    fat: ''
+    fat: '',
+    servingSize: '',
+    per100gNutrients: {}
   });
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date()); // ✅ State for Date Picker
+  const [showChat, setShowChat] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -93,10 +97,13 @@ const FoodLog = () => {
     setNewFood({
       ...newFood,
       name: foodItem.description,
+      servingGrams: 100,
+      per100gNutrients: nutrients,
       calories: nutrients.calories || 0,
       carbs: nutrients.carbs || 0,
       protein: nutrients.protein || 0,
-      fat: nutrients.fat || 0
+      fat: nutrients.fat || 0,
+      servingSize: 1
     });
 
     setSearchResults([]);
@@ -168,6 +175,7 @@ const FoodLog = () => {
         <nav className="space-x-6 flex items-center">
           <a href="/" className="hover:text-orange-400 text-lg">Home</a>
           <a href="/dashboard" className="hover:text-orange-400 text-lg">Dashboard</a>
+          <a href="/exercise-log" className="hover:text-orange-400 text-lg">Exercise Log</a>
           <a href="/support" className="hover:text-orange-400 text-lg">Support</a>
           <button 
             onClick={handleLogout}
@@ -239,7 +247,31 @@ const FoodLog = () => {
             <option value="snacks">Snacks</option>
           </select>
 
+
           <input type="text" placeholder="Food Name" value={newFood.name} onChange={(e) => setNewFood({ ...newFood, name: e.target.value })} required className="border p-2 rounded-lg" />
+
+          <input
+            type="number"
+            min="1"
+            step="1"
+            placeholder="Serving (g)"
+            value={newFood.servingGrams}
+            onChange={(e) => {
+              const grams = parseFloat(e.target.value) || 0;
+              const scale = grams / 100;
+
+              setNewFood({
+                ...newFood,
+                servingGrams: grams,
+                calories: (newFood.per100gNutrients.calories * scale).toFixed(2),
+                carbs: (newFood.per100gNutrients.carbs * scale).toFixed(2),
+                protein: (newFood.per100gNutrients.protein * scale).toFixed(2),
+                fat: (newFood.per100gNutrients.fat * scale).toFixed(2)
+              });
+            }}
+            className="border p-2 rounded-lg"
+          />
+
           <input type="number" placeholder="Calories" value={newFood.calories} onChange={(e) => setNewFood({ ...newFood, calories: e.target.value })} required className="border p-2 rounded-lg" />
           <input type="number" placeholder="Carbs (g)" value={newFood.carbs} onChange={(e) => setNewFood({ ...newFood, carbs: e.target.value })} required className="border p-2 rounded-lg" />
           <input type="number" placeholder="Protein (g)" value={newFood.protein} onChange={(e) => setNewFood({ ...newFood, protein: e.target.value })} required className="border p-2 rounded-lg" />
@@ -267,6 +299,14 @@ const FoodLog = () => {
           )}
         </div>
       ))}
+
+    <AiChatButton onClick={() => setShowChat(true)} />
+    {showChat && (
+          <AiChatBox 
+              onClose={() => setShowChat(false)} 
+              userData={userData} 
+          />
+      )}
     </div>
   );
 };
