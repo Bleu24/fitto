@@ -13,6 +13,12 @@ const ExerciseLog = () => {
 
     // ✅ Fetch full exercise log and recalculate today's burned calories
     const fetchExerciseLog = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            Navigate('/login');
+            return;
+        }
+
         try {
             const token = localStorage.getItem('token');
             const userId = JSON.parse(atob(token.split('.')[1])).id; // Extract userId from token
