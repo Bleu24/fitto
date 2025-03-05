@@ -301,6 +301,12 @@ const FoodLog = () => {
       ))}
 
     <AiChatButton onClick={() => setShowChat(true)} />
+    {showChat && (
+          <AiChatBox 
+              onClose={() => setShowChat(false)} 
+              userData={userData} 
+          />
+      )}
     </div>
   );
 };
