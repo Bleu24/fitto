@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ExerciseSearch from './ExerciseSearch';
 import ExerciseEntryCard from './ExerciseEntryCard';
 import SummaryCard from './SummaryCard';
@@ -6,6 +7,7 @@ import SummaryCard from './SummaryCard';
 const ExerciseLog = () => {
     const [exerciseLog, setExerciseLog] = useState([]);
     const [todayCalories, setTodayCalories] = useState(0);
+    const navigate = useNavigate();
 
     useEffect(() => {
         fetchExerciseLog();  // Fetch everything on first load
@@ -15,7 +17,7 @@ const ExerciseLog = () => {
     const fetchExerciseLog = async () => {
         const token = localStorage.getItem('token');
         if (!token) {
-            Navigate('/login');
+            navigate('/login');
             return;
         }
 
