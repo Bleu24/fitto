@@ -7,12 +7,16 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from './models/User.js';
 import Exercise from './models/Exercise.js';
+import axios from 'axios';
+import path from 'path';
 
-dotenv.config();
+dotenv.config({path: path.resolve('backend', '.env')});
 
 const app = express();
-const PORT = process.env.PORT || 5000;
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
+const PORT = process.env.PORT
+const JWT_SECRET = process.env.JWT_SECRET
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+
 
 // ✅ MongoDB Connection
 mongoose.connect('mongodb://localhost:27017/fittoDB', {
@@ -542,6 +546,37 @@ app.get('/api/user/dashboard-summary', verifyToken, async (req, res) => {
   } catch (error) {
       console.error('Dashboard Summary Error:', error);
       res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GEMINI ROUTE
+app.post('/api/ai-recommendation', verifyToken, async (req, res) => {
+  const { userGoal, userMacros, question } = req.body;
+  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-pro-exp-02-05:generateContent?key=${GEMINI_API_KEY}`;
+
+  const prompt = `
+      You are a fitness and nutrition expert. The user is trying to ${userGoal} weight.
+      Their target macros per day are:
+      - Protein: ${userMacros.protein}g
+      - Carbs: ${userMacros.carbs}g
+      - Fat: ${userMacros.fat}g
+
+      Here’s their question: ${question}
+
+      Please give a clear, short recommendation (max 2 sentences).
+  `;
+
+  try {
+      const response = await axios.post(geminiUrl, {
+          contents: [{ parts: [{ text: prompt }] }]
+      });
+
+      const aiMessage = response.data.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't generate a response.";
+      res.json({ message: aiMessage });
+
+  } catch (error) {
+      console.error("❌ Error calling Gemini API:", error.response?.data || error.message);
+      res.status(500).json({ message: 'Failed to fetch AI recommendation' });
   }
 });
 
