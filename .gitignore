@@ -27,8 +27,6 @@ dist-ssr
 .env
 .env.local
 .env.*.local
-
-# Ignore frontend and backend .env files (if separate)
-./.env
 backend/.env
 
+# Ignore frontend and backend .env files (if separate)
