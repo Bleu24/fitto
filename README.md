@@ -58,9 +58,17 @@ FITTO is a fitness tracking web application that helps users monitor their daily
 - type 'npm install' to install dependencies
 - type 'npm run dev'
 
-# NOTE
+# Config
 - declare your variables first in dotenv
 - Initialize JWT Secret, Expiry date, and your Gemini API Key. Use the experimental one if you want free api
 - Get Ninjas API Key for Exercise and USDA API Key for Food search
+
+# To All users
+- This is totally free for now, you can improve it if you want but this project is for my school. I also use it as my own fitness app so that I can track my own progress
+- Sorry for the UI I don't have time for design, I just want to prioritize functionalities. Maybe soon I can improve the UI.
+
+# Bugs report
+- no bugs yet as of 03/13/25
+
   
 
