@@ -41,3 +41,20 @@ FITTO is a fitness tracking web application that helps users monitor their daily
 - MongoDB with Mongoose ODM
 - JWT Authentication for secure login
 - bcrypt.js for password hashing
+
+
+# How to install and run?
+- Go to 'Code' then clone it using git clone <copied-link>
+- open folder in IDE of your choice
+- open terminal
+- type 'npm install' to install dependencies
+- type 'npm run dev'
+
+### If you have no GitHub yet, try this:
+- Go to Release then click Source Code (zip)
+- then extract to destination folder
+- open folder in IDE of your choice
+- open terminal
+- type 'npm install' to install dependencies
+- type 'npm run dev'
+
